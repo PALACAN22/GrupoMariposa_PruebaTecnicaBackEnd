@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: service-a-library
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:biblioteca_db}
+    username: ${DB_USER:biblioteca_user}
+    password: ${DB_PASSWORD:biblioteca_pass}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+jwt:
+  secret: ${JWT_SECRET:1234567890}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+loans:
+  service-b-url: ${SERVICE_B_URL:http://localhost:8081}
+  connect-timeout-ms: 3000
+  read-timeout-ms: 5000
+
+logging:
+  level:
+    com.biblioteca: INFO

@@ -1,0 +1,11 @@
+# Java / Maven
+service-a-library/target/
+*.class
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Sistema
+.DS_Store
