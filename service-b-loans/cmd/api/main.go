@@ -2,7 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
+	"os"
 	"strconv"
 	"time"
 
@@ -16,16 +17,20 @@ import (
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	cfg := config.Load()
 
 	db, err := connectWithRetry(cfg.DatabaseURL, 10, 3*time.Second)
 	if err != nil {
-		log.Fatalf("Could not connect to the database: %v", err)
+		slog.Error("could not connect to database", "error", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
 	if err := runMigrations(db); err != nil {
-		log.Fatalf("Error applying migrations: %v", err)
+		slog.Error("error applying migrations", "error", err)
+		os.Exit(1)
 	}
 
 	timeoutMs, _ := strconv.Atoi(cfg.HTTPTimeoutMs)
@@ -37,9 +42,10 @@ func main() {
 
 	router := handler.NewRouter(loanHandler)
 
-	log.Printf("Service B (loans) listening on the port %s", cfg.Port)
+	slog.Info("service-b starting", "port", cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {
-		log.Fatalf("Error starting the server: %v", err)
+		slog.Error("error starting server", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -56,7 +62,7 @@ func connectWithRetry(dsn string, attempts int, delay time.Duration) (*sql.DB, e
 				err = pingErr
 			}
 		}
-		log.Printf("Tried %d/%d: Database not yet available (%v), retrying in %s...", i, attempts, err, delay)
+		slog.Warn("database not ready, retrying", "attempt", i, "of", attempts, "error", err)
 		time.Sleep(delay)
 	}
 	return nil, err

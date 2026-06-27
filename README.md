@@ -1,8 +1,8 @@
-# ----- Biblioteca - Prueba Técnica Backend -----
+# Biblioteca - Prueba Técnica Backend 
 
 Sistema de gestión de biblioteca con dos servicios independientes que se comunican por HTTP.
 
-## ----- Cómo levantar Y Correr el proyecto -----
+##  Cómo levantar Y Correr el proyecto 
 
 Primero copiar los archivos de configuración:
 
@@ -38,29 +38,29 @@ Para resetear todo incluyendo las bases de datos: `docker compose down -v`
 
 
 
-## ----- Arquitectura -----
+##  Arquitectura 
 
-        Cliente (Postman)
-                │
+```
+      Cliente (Postman)
+             │
   ┌──────────────────────────┐
-  │   SERVICIO A (Java)      │   :8080
+  │   SERVICIO A (Java)      │  :8080
   │   - Login / usuarios     │
   │   - Libros (CRUD)        │
   │   - Orquesta préstamos   │
   └──────────┬───────────────┘
              │ HTTP
-             │ (1) Petición: "registra este préstamo"
+             │ (1) "registra este préstamo"
   ┌──────────────────────────┐
-  │   SERVICIO B (Go)        │   :8081
+  │   SERVICIO B (Go)        │  :8081
   │   - Préstamos / devol.   │
   └──────────┬───────────────┘
              │ HTTP
-             │ (2) Validación: "¿este libro existe y tiene copias libres?"
-             │      
+             │ (2) "¿este libro existe y tiene copias?"
   ┌──────────────────────────┐
-  │   de vuelta al           │
-  │   SERVICIO A             │
+  │   SERVICIO A (responde)  │
   └──────────────────────────┘
+```
 
 
 
@@ -72,7 +72,7 @@ Cada servicio tiene su propia base de datos PostgreSQL. Se realizó esto así pa
 
 
 
-## ----- Flujo completo: login → consultar libro → préstamo -----
+##  Flujo completo: login → consultar libro → préstamo 
 
 **1. Login**
 
@@ -127,7 +127,7 @@ Authorization: Bearer <token>
 
 
 
-## ----- Decisiones técnicas Aplicadas -----
+##  Decisiones técnicas Aplicadas 
 
 ### Servicio A - Java / Spring Boot - Con mejor dominio que NodeJS
 
@@ -194,7 +194,10 @@ docker run --rm -v ${PWD}:/app -w /app golang:1.21-alpine go test ./... -v
 
 
 
-## ----- Qué no llegué a hacer -----
+##  Qué no llegué a hacer 
 
-- Tests de integración (solo hay unitarios)
-- Rate limiting
+- **Tests de integración**: los tests actuales son unitarios, verifican la lógica de negocio con fakes. Un test de integración verificaría un endpoint completo pasando por todas las capas hasta la BD real. En Service B (Go) esto requiere levantar una PostgreSQL real durante el test (no hay equivalente a H2 en Go), lo que implica Docker o testcontainers — más tiempo del disponible.
+
+- **Rate limiting**: limitaría cuántos requests puede hacer un cliente por minuto. No es complejo pero requiere integrar un middleware en ambos servicios y no era prioritario frente al resto.
+
+- **gRPC**: reemplazaría o complementaría la comunicación HTTP entre servicios. Requiere definir archivos `.proto`, generar código para Java y Go, y cambiar la capa de comunicación completa. Es la tarea más costosa de todos los bonus y la de menor impacto visible para la evaluación.
