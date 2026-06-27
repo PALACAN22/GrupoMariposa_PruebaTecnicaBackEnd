@@ -44,22 +44,24 @@ Para resetear todo incluyendo las bases de datos: `docker compose down -v`
       Cliente (Postman)
              │
   ┌──────────────────────────┐
-  │   SERVICIO A (Java)      │  :8080
-  │   - Login / usuarios     │
+  │   SERVICIO A (Java)      │
+  │   - Login / usuarios     │  :8080
   │   - Libros (CRUD)        │
   │   - Orquesta préstamos   │
   └──────────┬───────────────┘
              │ HTTP
-             │ (1) "registra este préstamo"
+             │ (1) Peticioón: "registra este préstamo"
   ┌──────────────────────────┐
-  │   SERVICIO B (Go)        │  :8081
+  │   SERVICIO B (Go)        │
+  │                          │  :8081
   │   - Préstamos / devol.   │
   └──────────┬───────────────┘
              │ HTTP
-             │ (2) "¿este libro existe y tiene copias?"
+             │ (2) Validación: "¿este libro existe y tiene copias?"
   ┌──────────────────────────┐
   │   SERVICIO A (responde)  │
   └──────────────────────────┘
+  
 ```
 
 
@@ -196,8 +198,8 @@ docker run --rm -v ${PWD}:/app -w /app golang:1.21-alpine go test ./... -v
 
 ##  Qué no llegué a hacer 
 
-- **Tests de integración**: los tests actuales son unitarios, verifican la lógica de negocio con fakes. Un test de integración verificaría un endpoint completo pasando por todas las capas hasta la BD real. En Service B (Go) esto requiere levantar una PostgreSQL real durante el test (no hay equivalente a H2 en Go), lo que implica Docker o testcontainers — más tiempo del disponible.
+- **Tests de integración**: los tests actuales son unitarios, verifican la lógica de negocio con fakes. Un test de integración verificaría un endpoint completo pasando por todas las capas hasta la BD real. En el servicio B (Go) esto requiere levantar una PostgreSQL real durante el test y no hay equivalente a H2 en Go.
 
-- **Rate limiting**: limitaría cuántos requests puede hacer un cliente por minuto. No es complejo pero requiere integrar un middleware en ambos servicios y no era prioritario frente al resto.
+- **Rate limiting**: Esta función nos ayuda a limitar cuántos requests puede hacer un cliente por minuto. Se requiere integrar un middleware en ambos servicios. Por el tiempo disponible no se logró implementar.
 
-- **gRPC**: reemplazaría o complementaría la comunicación HTTP entre servicios. Requiere definir archivos `.proto`, generar código para Java y Go, y cambiar la capa de comunicación completa. Es la tarea más costosa de todos los bonus y la de menor impacto visible para la evaluación.
+- **gRPC**: Requiere definir archivos `.proto`, generar código para Java y Go, y cambiar la capa de comunicación completa. De igual forma, por el tiempo disponible no se logró implementar.
