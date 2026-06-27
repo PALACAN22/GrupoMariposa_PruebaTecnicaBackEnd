@@ -18,7 +18,7 @@ import com.biblioteca.servicea.dto.ServiceBLoanResponse;
 import com.biblioteca.servicea.entity.User;
 import com.biblioteca.servicea.service.LoanOrchestrationService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

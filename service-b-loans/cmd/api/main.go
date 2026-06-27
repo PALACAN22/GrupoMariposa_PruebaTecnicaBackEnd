@@ -1,39 +1,81 @@
 package main
 
 import (
-	"context"
-	"fmt"
+	"database/sql"
+	"log"
+	"strconv"
 	"time"
 
-	"github.com/biblioteca/service-b-loans/internal/apperror"
+	_ "github.com/jackc/pgx/v5/stdlib" // driver de Postgres para database/sql
+
 	"github.com/biblioteca/service-b-loans/internal/client"
 	"github.com/biblioteca/service-b-loans/internal/config"
-	"github.com/biblioteca/service-b-loans/internal/model"
+	"github.com/biblioteca/service-b-loans/internal/handler"
+	"github.com/biblioteca/service-b-loans/internal/repository"
+	"github.com/biblioteca/service-b-loans/internal/service"
 )
 
 func main() {
 	cfg := config.Load()
 
-	fmt.Println("Port:", cfg.Port)
-	fmt.Println("DB:", cfg.DatabaseURL)
+	db, err := connectWithRetry(cfg.DatabaseURL, 10, 3*time.Second)
+	if err != nil {
+		log.Fatalf("Could not connect to the database: %v", err)
+	}
+	defer db.Close()
 
-	loan := model.Loan{
-		ID:       1,
-		UserID:   10,
-		BookID:   20,
-		Status:   model.StatusActive,
-		LoanDate: time.Now(),
+	if err := runMigrations(db); err != nil {
+		log.Fatalf("Error applying migrations: %v", err)
 	}
 
-	fmt.Println("Loan created:", loan)
+	timeoutMs, _ := strconv.Atoi(cfg.HTTPTimeoutMs)
+	libraryClient := client.NewLibraryClient(cfg.LibraryServiceURL, time.Duration(timeoutMs)*time.Millisecond)
 
-	err := apperror.ErrBookNotFound
-	fmt.Println("Example error:", err)
+	loanRepo := repository.NewLoanRepository(db)
+	loanService := service.NewLoanService(loanRepo, libraryClient)
+	loanHandler := handler.NewLoanHandler(loanService)
 
-	c := client.NewLibraryClient("http://localhost:8081", 5*time.Second)
+	router := handler.NewRouter(loanHandler)
 
-	res, _ := c.CheckAvailability(context.Background(), 10)
+	log.Printf("Service B (loans) listening on the port %s", cfg.Port)
+	if err := router.Run(":" + cfg.Port); err != nil {
+		log.Fatalf("Error starting the server: %v", err)
+	}
+}
 
-	fmt.Println("Availability:", res)
+func connectWithRetry(dsn string, attempts int, delay time.Duration) (*sql.DB, error) {
+	var db *sql.DB
+	var err error
 
+	for i := 1; i <= attempts; i++ {
+		db, err = sql.Open("pgx", dsn)
+		if err == nil {
+			if pingErr := db.Ping(); pingErr == nil {
+				return db, nil
+			} else {
+				err = pingErr
+			}
+		}
+		log.Printf("Tried %d/%d: Database not yet available (%v), retrying in %s...", i, attempts, err, delay)
+		time.Sleep(delay)
+	}
+	return nil, err
+}
+
+func runMigrations(db *sql.DB) error {
+	schema := `
+	CREATE TABLE IF NOT EXISTS loans (
+		id BIGSERIAL PRIMARY KEY,
+		user_id BIGINT NOT NULL,
+		book_id BIGINT NOT NULL,
+		status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+		loan_date TIMESTAMP NOT NULL DEFAULT NOW(),
+		due_date TIMESTAMP NOT NULL,
+		return_date TIMESTAMP
+	);
+	CREATE INDEX IF NOT EXISTS idx_loans_user_id ON loans(user_id);
+	CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
+	`
+	_, err := db.Exec(schema)
+	return err
 }

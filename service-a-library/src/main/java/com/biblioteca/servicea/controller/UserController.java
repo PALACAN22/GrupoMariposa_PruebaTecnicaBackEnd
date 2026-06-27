@@ -16,7 +16,7 @@ import com.biblioteca.servicea.dto.UserRequest;
 import com.biblioteca.servicea.dto.UserResponse;
 import com.biblioteca.servicea.service.UserService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
