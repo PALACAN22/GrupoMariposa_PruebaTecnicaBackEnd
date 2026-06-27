@@ -18,6 +18,7 @@ import com.biblioteca.servicea.dto.ServiceBLoanResponse;
 import com.biblioteca.servicea.entity.User;
 import com.biblioteca.servicea.service.LoanOrchestrationService;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class LoanController {
     private final LoanOrchestrationService loanOrchestrationService;
 
     @PostMapping
-    public ResponseEntity<ServiceBLoanResponse> createLoan(@Valid @RequestBody LoanRequest request, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ServiceBLoanResponse> createLoan(@Valid @RequestBody LoanRequest request, @Parameter(hidden = true) @AuthenticationPrincipal User currentUser) {
         ServiceBLoanResponse response = loanOrchestrationService.createLoan(currentUser.getId(), request.getBookId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -41,12 +42,12 @@ public class LoanController {
     }
 
     @GetMapping("/me/active")
-    public ResponseEntity<List<ServiceBLoanResponse>> myActiveLoans(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<List<ServiceBLoanResponse>> myActiveLoans(@Parameter(hidden = true) @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(loanOrchestrationService.getActiveLoans(currentUser.getId()));
     }
 
     @GetMapping("/me/history")
-    public ResponseEntity<List<ServiceBLoanResponse>> myLoanHistory(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<List<ServiceBLoanResponse>> myLoanHistory(@Parameter(hidden = true) @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(loanOrchestrationService.getLoanHistory(currentUser.getId()));
     }
 
