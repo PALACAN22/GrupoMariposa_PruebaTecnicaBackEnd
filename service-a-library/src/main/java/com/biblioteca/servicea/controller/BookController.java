@@ -19,7 +19,7 @@ import com.biblioteca.servicea.dto.BookRequest;
 import com.biblioteca.servicea.dto.BookResponse;
 import com.biblioteca.servicea.service.BookService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

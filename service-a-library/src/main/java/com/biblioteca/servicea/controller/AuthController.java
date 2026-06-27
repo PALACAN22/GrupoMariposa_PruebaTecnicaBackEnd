@@ -13,8 +13,8 @@ import com.biblioteca.servicea.dto.UserResponse;
 import com.biblioteca.servicea.service.AuthService;
 import com.biblioteca.servicea.service.UserService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
 import lombok.RequiredArgsConstructor;
 
 @RestController
