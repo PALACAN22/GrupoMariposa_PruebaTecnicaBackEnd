@@ -33,9 +33,7 @@ func NewLoanService(repo LoanRepository, libraryClient LibraryClient) *LoanServi
 func (s *LoanService) CreateLoan(ctx context.Context, userID, bookID int64) (*model.Loan, error) {
 	availability, err := s.libraryClient.CheckAvailability(ctx, bookID)
 	if err != nil {
-		// Si el Servicio A esta caido, NO podemos garantizar que el libro
-		// exista o tenga copias, asi que es mas seguro rechazar el prestamo
-		// que aceptarlo "a ciegas".
+		// Si el Servicio A esta caido, el libro no exista o no tenga copias rechazar el prestamo
 		return nil, err
 	}
 

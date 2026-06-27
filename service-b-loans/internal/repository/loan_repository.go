@@ -84,8 +84,7 @@ func (r *LoanRepository) MarkAsReturned(ctx context.Context, id int64) (*model.L
 		Scan(&loan.ID, &loan.UserID, &loan.BookID, &loan.Status, &loan.LoanDate, &loan.DueDate, &returnDate)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		// Puede ser que el prestamo no exista, o que ya estuviera devuelto.
-		// Distinguimos los dos casos para dar un mensaje de error mas claro.
+		// Puede ser que el prestamo no exista o que ya estuviera devuelto
 		existing, findErr := r.FindByID(ctx, id)
 		if findErr != nil {
 			return nil, apperror.ErrLoanNotFound

@@ -1,0 +1,6 @@
+# Binario compilado
+service-b-loans
+/service-b
+
+# Secrets
+.env
