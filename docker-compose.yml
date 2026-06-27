@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+
+  # ---------- DB service A (Java) ----------
+  db-library:
+    image: postgres:16-alpine
+    container_name: db-library
+    environment:
+      POSTGRES_DB: ${LIBRARY_DB_NAME:-biblioteca_db}
+      POSTGRES_USER: ${LIBRARY_DB_USER:-biblioteca_user}
+      POSTGRES_PASSWORD: ${LIBRARY_DB_PASSWORD:-biblioteca_pass}
+    ports:
+      - "5434:5432"
+    volumes:
+      - db_library_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LIBRARY_DB_USER:-biblioteca_user} -d ${LIBRARY_DB_NAME:-biblioteca_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - biblioteca-net
+
+  # ---------- DB service B (Go) ----------
+
+  db-loans:
+    image: postgres:16-alpine
+    container_name: db-loans
+    environment:
+      POSTGRES_DB: ${LOANS_DB_NAME:-loans_db}
+      POSTGRES_USER: ${LOANS_DB_USER:-loans_user}
+      POSTGRES_PASSWORD: ${LOANS_DB_PASSWORD:-loans_pass}
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_loans_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LOANS_DB_USER:-loans_user} -d ${LOANS_DB_NAME:-loans_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - biblioteca-net
+
+  # ---------- Service A: Library (Java / Spring Boot) ----------
+  service-a:
+    build:
+      context: ./service-a-library
+    container_name: service-a-library
+    env_file:
+      - ./service-a-library/.env
+    environment:
+      DB_HOST: db-library
+      DB_PORT: 5432
+      SERVICE_B_URL: http://service-b:8081
+    ports:
+      - "8080:8080"
+    depends_on:
+      db-library:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - biblioteca-net
+
+  # ---------- Service B: Loans (Go) ----------
+  service-b:
+    build:
+      context: ./service-b-loans
+    container_name: service-b-loans
+    env_file:
+      - ./service-b-loans/.env
+    environment:
+      DB_HOST: db-loans
+      DB_PORT: 5432
+      LIBRARY_SERVICE_URL: http://service-a:8080
+    ports:
+      - "8081:8081"
+    depends_on:
+      db-loans:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8081/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - biblioteca-net
+
+networks:
+  biblioteca-net:
+    driver: bridge
+
+volumes:
+  db_library_data:
+  db_loans_data:
